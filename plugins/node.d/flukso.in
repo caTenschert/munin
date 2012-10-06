@@ -64,10 +64,8 @@ Nothing spezial
 #  Homepage: www.tenschert.net
 #
 # $Id: flukso.pl 0001 2012-09-28 14:44:18Z carltenschert $
-
-=cut
-
 # Now for the real work...
+=cut
 #!/usr/bin/perl
 
 use IO::Socket;
