@@ -34,36 +34,10 @@ Need names of Sensors and IP an Port of flukso box
 
 Nothing spezial
 
-=head1 MAGIC MARKERS
-################################################################
-#
-#  Copyright notice
-#
-#  (c) 2005-2012
-#  Copyright: Carl Tenschert (carl at tenschert dot net)
-#  All rights reserved
-#
-#  This script free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  The GNU General Public License can be found at
-#  http://www.gnu.org/copyleft/gpl.html.
-#  A copy is found in the textfile GPL.txt and important notices to the license
-#  from the author is found in LICENSE.txt distributed with these scripts.
-#
-#  This script is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  This copyright notice MUST APPEAR in all copies of the script!
+=head1 LICENSE
 
-#
-#  Homepage: www.tenschert.net
-#
-# $Id: flukso.pl 0001 2012-09-28 14:44:18Z carltenschert $
+GPLv2
+
 # Now for the real work...
 =cut
 #!/usr/bin/perl
