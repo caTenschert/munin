@@ -1,0 +1,184 @@
+#!@@PERL@@ -w
+# -*- perl -*-
+
+=head1 NAME
+
+Flukso Plugin vor reading Power Valus from Flukso
+
+=head1 NOTES
+
+works only for Voltage
+
+=head2 EXAMPLE CONFIGURATION
+
+The following shows a typical configuration:
+
+ [flukso]                
+env.flukso_sensor1_hash 12345678901234567890123456789012
+env.flukso_sensor1_unit Wh
+env.flukso_sensor1_name L1
+env.flukso_sensor2 hash 12345678901234567890123456789012
+env.flukso_sensor2_unit Wh
+env.flukso_sensor2_name L2
+env.flukso_sensor3_hash 12345678901234567890123456789012
+env.flukso_sensor3_unit Wh
+env.flukso_sensor3_name L3
+env.flukso_ip 192.168.178.120
+env.flukso_Port 8080
+
+=head1 CONFIGURATION
+
+Need names of Sensors and IP an Port of flukso box
+
+=head1 USAGE
+
+Nothing spezial
+
+=head1 MAGIC MARKERS
+################################################################
+#
+#  Copyright notice
+#
+#  (c) 2005-2012
+#  Copyright: Carl Tenschert (carl at tenschert dot net)
+#  All rights reserved
+#
+#  This script free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  The GNU General Public License can be found at
+#  http://www.gnu.org/copyleft/gpl.html.
+#  A copy is found in the textfile GPL.txt and important notices to the license
+#  from the author is found in LICENSE.txt distributed with these scripts.
+#
+#  This script is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  This copyright notice MUST APPEAR in all copies of the script!
+
+#
+#  Homepage: www.tenschert.net
+#
+# $Id: flukso.pl 0001 2012-09-28 14:44:18Z carltenschert $
+
+=cut
+
+# Now for the real work...
+#!/usr/bin/perl
+
+use IO::Socket;
+use strict;
+my @sensors;
+$sensors[0]  = $ENV{flukso_sensor1_hash}  || "b19217069fe4bc4cbd8146ec71cb94f3";
+$sensors[1]  = $ENV{flukso_sensor2_hash}  || "14908e3476b4d68c6763c0af290460b9";
+$sensors[2]  = $ENV{flukso_sensor3_hash}  || "3167761bb96c470bf6dc16b4f1bf4888";
+$sensors[3]  = $ENV{flukso_sensor4_hash}  || "";
+$sensors[4]  = $ENV{flukso_sensor5_hash}  || "";
+$sensors[5]  = $ENV{flukso_sensor6_hash}  || "";
+my @names;
+$names[0]  = $ENV{flukso_sensor1_name}  || "L1";
+$names[1]  = $ENV{flukso_sensor2_name}  || "L2";
+$names[2]  = $ENV{flukso_sensor3_name}  || "L3";
+$names[3]  = $ENV{flukso_sensor4_name}  || "";
+$names[4]  = $ENV{flukso_sensor5_name}  || "";
+$names[5]  = $ENV{flukso_sensor6_name}  || "";
+my @units;
+$units[0]  = $ENV{flukso_sensor1_unit}  || "Wh";
+$units[1]  = $ENV{flukso_sensor2_unit}  || "Wh";
+$units[2]  = $ENV{flukso_sensor3_unit}  || "Wh";
+$units[3]  = $ENV{flukso_sensor4_unit}  || "";
+$units[4]  = $ENV{flukso_sensor5_unit}  || "";
+$units[5]  = $ENV{flukso_sensor6_unit}  || "";
+
+my $fluksoIP = $ENV{flukso_ip} || "192.168.178.120";
+my $fluksoPORT   = $ENV{flukso_port}     || "8080";
+
+my $sensorscount = 0;
+foreach (@sensors) {
+                if ( $_ |=""){$sensorscount++}
+        }
+
+my @array;
+my @datas;
+my @values;
+my $last;
+my $counts;
+my $summary;
+my $last;
+my $min = 32000;
+my $max = 0;
+my $success;
+my $data;
+my $len;
+my $counter = 0;
+my $avr;
+my $value;
+
+if ( $ARGV[0] and $ARGV[0] eq "config" ) {
+        print "graph_title Stromverbrauch\n";
+        print "graph_vlabel Wh\n";
+        print "graph_category Power\n";
+        print "graph_info Power use\n";
+        for ( my $i = 0 ; $i < $sensorscount ; $i++ ) {
+                print "$names[$i]_avr.label $names[$i]\n";
+#               print "$names[$i]_avr.GAUGE $units[$i]\n";
+
+        }
+        exit 0;
+
+}
+######################
+# Read from flukso
+######################
+
+for ( my $i = 0 ; $i < $sensorscount ; $i++ ) {
+        my $socket = new IO::Socket::INET(
+                PeerAddr => $fluksoIP,
+                PeerPort => $fluksoPORT,
+	        );
+        die "Unable to open connection: $!\n" unless defined $socket;
+
+        print $socket "GET /sensor/$sensors[$i]?version=1.0&interval=minute&unit=watt&callback=realtime HTTP/1.0\r\n\r\n";
+        my $buf;
+        my $message;
+        # print "test";
+        while ( ( read $socket, $buf, 1024 ) > 0 ) {
+                $message .= $buf;
+        }
+        #print "$message\n";
+        $min = 32000;
+        @array = split( /\n/, $message );
+        foreach (@array) {
+                if ( $_ =~ /^realtime/ ) {
+                        $len  = length($_) - 15;
+                        $data = substr( $_, 11, $len );
+                        #print "Real  $_ \n";
+                        #print "$data\n";
+                        @datas = split( /\],\[/, $data );
+                        foreach (@datas) {
+
+                                # print "$_\n";
+                                @values = split( /,/, $_ );
+
+                                #print "$values[1]";
+                                $last = $values[1];
+                                $counter++;
+
+                                $value += $values[1];
+                                if ( $counter <= 1 ) { $min = $last }
+                                if ( $last < $min )  { $min = $last }
+                                if ( $last > $max )  { $max = $last }
+                        }
+                        $avr = $value / $counter;
+                        #print "avr $avr, min $min ,max $max\n";
+                }
+        }
+        print sprintf( "%s_avr %.2f\n", $names[$i], $avr );
+}
+exit 0;
+
+# vim:syntax=perl
